@@ -3,7 +3,7 @@
 All notable changes to World of Claudecraft are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
-## [0.1.2] — Unreleased (verified, awaiting merge of PRs #8 and #9)
+## [0.1.2] — 2026-06-12
 
 Performance pass: eliminates the O(n²) hot paths in the server's snapshot
 broadcast and sim AI loops.
@@ -30,7 +30,7 @@ broadcast and sim AI loops.
 - `tests/snapshots.test.ts` (6 tests) and `tests/spatial.test.ts` (4 tests),
   including grid-vs-brute-force equivalence across the whole world. (#8, #9)
 
-## [0.1.1] — Unreleased (verified, awaiting merge of PR #7)
+## [0.1.1] — 2026-06-12
 
 Security hardening: fixes a live item-duplication exploit and a
 single-message server crash. Merge before any other work.
