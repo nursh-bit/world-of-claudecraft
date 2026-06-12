@@ -3,6 +3,11 @@
 All notable changes to World of Claudecraft are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- **Rate-limiter state wipe:** the memory backstop in `server/ratelimit.ts` previously called `attempts.clear()` when the tracked-IP map exceeded 10 000 entries, resetting every IP's request history simultaneously. An attacker who could force the map to that threshold would momentarily bypass rate limiting. The backstop now evicts only the single oldest-inserted entry, preserving all other IP histories.
+
 ## [0.1.2] — 2026-06-12
 
 Performance pass: eliminates the O(n²) hot paths in the server's snapshot
