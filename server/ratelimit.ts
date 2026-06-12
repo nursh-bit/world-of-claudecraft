@@ -59,6 +59,10 @@ export function requestIp(req: http.IncomingMessage): string {
   return chain[0] ?? remote;
 }
 
+export function clearAttemptsForTest(): void {
+  attempts.clear();
+}
+
 export function rateLimited(req: http.IncomingMessage, maxPerMinute = 20): boolean {
   const ip = requestIp(req);
   const now = Date.now();
@@ -66,6 +70,11 @@ export function rateLimited(req: http.IncomingMessage, maxPerMinute = 20): boole
   const list = (attempts.get(ip) ?? []).filter((t) => t > windowStart);
   const updated = [...list, now];
   attempts.set(ip, updated);
-  if (attempts.size > MAX_TRACKED_IPS) attempts.clear(); // memory backstop
+  if (attempts.size > MAX_TRACKED_IPS) {
+    // Evict the oldest-seen entry rather than clearing all state, so a
+    // large number of distinct IPs doesn't reset everyone's rate-limit window.
+    const oldest = attempts.keys().next().value;
+    if (oldest !== undefined) attempts.delete(oldest);
+  }
   return updated.length > maxPerMinute;
 }

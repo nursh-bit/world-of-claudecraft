@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildWebSocketAuthMessage, buildWebSocketUrl } from '../src/net/online';
 import { Sim } from '../src/sim/sim';
 import { validCharName } from '../server/auth';
-import { rateLimited, requestIp } from '../server/ratelimit';
+import { rateLimited, requestIp, clearAttemptsForTest } from '../server/ratelimit';
 
 function fakeReq(headers: Record<string, string>, remoteAddress: string) {
   const req: any = new EventEmitter();
@@ -89,6 +89,24 @@ describe('rate-limit client IP selection', () => {
     expect(aliceLimited).toBe(true);
     // ...while another player behind the same proxy is unaffected
     expect(rateLimited(fakeReq({ 'x-forwarded-for': '198.51.100.201' }, '172.18.0.1'))).toBe(false);
+  });
+
+  it('memory backstop evicts only the oldest entry, not all rate-limit state', () => {
+    clearAttemptsForTest();
+    // victim is first-inserted — the one that gets evicted when the map overflows
+    rateLimited(fakeReq({}, '2.0.0.1'));
+    // survivor is second-inserted and rate-limited; its state must survive the eviction
+    const survivorReq = () => fakeReq({}, '2.0.0.2');
+    for (let i = 0; i < 21; i++) rateLimited(survivorReq());
+    // fill to exactly 10 000 unique IPs (victim + survivor + 9 998 fillers)
+    for (let n = 2; n < 10_000; n++) {
+      rateLimited(fakeReq({}, `3.${(n >> 8) & 255}.${n & 255}.1`));
+    }
+    // the 10 001st unique IP triggers the backstop; victim (first-inserted) is evicted
+    rateLimited(fakeReq({}, '3.39.16.1'));
+    // survivor's 21 recorded requests must still be present — a .clear() would wipe them
+    expect(rateLimited(survivorReq())).toBe(true);
+    clearAttemptsForTest();
   });
 });
 
